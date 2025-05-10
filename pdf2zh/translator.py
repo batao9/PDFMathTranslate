@@ -401,7 +401,7 @@ class OpenAITranslator(BaseTranslator):
     envs = {
         "OPENAI_BASE_URL": "https://api.openai.com/v1",
         "OPENAI_API_KEY": None,
-        "OPENAI_MODEL": "gpt-4o-mini",
+        "OPENAI_MODEL": "gpt-4.1",
     }
     CustomPrompt = True
 
@@ -629,7 +629,7 @@ class GeminiTranslator(OpenAITranslator):
     name = "gemini"
     envs = {
         "GEMINI_API_KEY": None,
-        "GEMINI_MODEL": "gemini-1.5-flash",
+        "GEMINI_MODEL": "gemini-2.5-flash-preview-04-17",
     }
     CustomPrompt = True
 
@@ -858,7 +858,7 @@ class GrokTranslator(OpenAITranslator):
     name = "grok"
     envs = {
         "GROK_API_KEY": None,
-        "GROK_MODEL": "grok-2-1212",
+        "GROK_MODEL": "grok-3-beta",
     }
     CustomPrompt = True
 
