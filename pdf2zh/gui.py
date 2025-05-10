@@ -575,7 +575,7 @@ with gr.Blocks(
                 lang_to = gr.Dropdown(
                     label="Translate to",
                     choices=lang_map.keys(),
-                    value=ConfigManager.get("PDF2ZH_LANG_TO", "Simplified Chinese"),
+                    value=ConfigManager.get("PDF2ZH_LANG_TO", "Japanese"),
                 )
             page_range = gr.Radio(
                 choices=page_map.keys(),
