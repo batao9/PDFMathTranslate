@@ -155,33 +155,58 @@ class ConfigManager:
     def get_env_by_translatername(cls, translater_name, name, default=None):
         """根据 name 获取对应的 translator 配置"""
         instance = cls.get_instance()
-        translators = instance._config_data.get("translators", [])
-        for translator in translators:
-            if translator.get("name") == translater_name.name:
-                if translator["envs"][name]:
-                    return translator["envs"][name]
-                else:
+        translators_config = instance._config_data.get("translators", [])
+        
+        found_translator_entry = None
+        for translator_entry in translators_config:
+            if translator_entry.get("name") == translater_name.name:
+                found_translator_entry = translator_entry
+                break
+        
+        if found_translator_entry:
+            # 設定ファイルにエントリが存在する場合
+            if name in found_translator_entry["envs"] and found_translator_entry["envs"][name] is not None and found_translator_entry["envs"][name] != "":
+                # 値がNoneでも空文字列でもなければその値を返す
+                return found_translator_entry["envs"][name]
+            else:
+                # 値がNoneまたは空の場合、環境変数を試す
+                env_value = os.environ.get(name)
+                if env_value is not None:
+                    # 環境変数に値があれば、それを返し、設定ファイルも更新する
                     with instance._lock:
-                        translator["envs"][name] = default
+                        found_translator_entry["envs"][name] = env_value
                         instance._save_config()
-                        return default
-
-        with instance._lock:
-            translators = instance._config_data.get("translators", [])
-            for translator in translators:
-                if translator.get("name") == translater_name.name:
-                    translator["envs"][name] = default
-                    instance._save_config()
+                    return env_value
+                else:
+                    # 環境変数にもなければデフォルト値を返し、設定ファイルも更新する
+                    with instance._lock:
+                        found_translator_entry["envs"][name] = default
+                        instance._save_config()
                     return default
-            translators.append(
-                {
-                    "name": translater_name.name,
-                    "envs": copy.deepcopy(translater_name.envs),
-                }
-            )
-            instance._config_data["translators"] = translators
-            instance._save_config()
-            return default
+        else:
+            # 設定ファイルに該当の翻訳サービスのエントリ自体が存在しない場合
+            # 環境変数を試す
+            env_value = os.environ.get(name)
+            effective_value = env_value if env_value is not None else default
+            
+            # 新しいエントリとして設定ファイルに追加
+            with instance._lock:
+                # deepcopyして、クラス定義のデフォルトenvsを汚染しないようにする
+                new_translator_specific_envs = copy.deepcopy(translater_name.envs)
+                new_translator_specific_envs[name] = effective_value
+
+                # instance._config_data['translators'] が存在しない場合も考慮
+                if "translators" not in instance._config_data or not isinstance(instance._config_data["translators"], list):
+                    instance._config_data["translators"] = []
+                
+                instance._config_data["translators"].append(
+                    {
+                        "name": translater_name.name,
+                        "envs": new_translator_specific_envs,
+                    }
+                )
+                instance._save_config()
+            return effective_value
 
     @classmethod
     def delete(cls, key):
